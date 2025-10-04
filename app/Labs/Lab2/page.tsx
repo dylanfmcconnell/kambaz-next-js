@@ -33,7 +33,7 @@ export default function Lab2() {
           elements of the same name, e.g., P, we can refer to a specific element by its ID
         </p>
         <p id="wd-id-selector-2">
-          Here's another paragraph using a different ID and a different look and
+          Heres another paragraph using a different ID and a different look and
           feel
         </p>
       </div>
@@ -41,7 +41,7 @@ export default function Lab2() {
       <div id="wd-css-class-selectors">
         <h3>Class selectors</h3>
         <p className="wd-class-selector">
-          Instead of using IDs to refer to elements, you can use an element's CLASS attribute
+          Instead of using IDs to refer to elements, you can use an elements CLASS attribute
         </p>
         <h4 className="wd-class-selector">
           This heading has same style as paragraph above
