@@ -1,5 +1,5 @@
 export default function MapFunction() {
-  let numberArray1 = [1, 2, 3, 4, 5, 6];
+  const numberArray1 = [1, 2, 3, 4, 5, 6];
   const square = (a: number) => a * a;
   const todos = ["Buy milk", "Feed the pets"];
   const squares = numberArray1.map(square);
@@ -13,7 +13,7 @@ export default function MapFunction() {
       <h4>List of Todos</h4>
       <ol>
         {todos.map((todo) => (
-          <li>{todo}</li>
+          <li key={todo}>{todo}</li>
         ))}
       </ol>
       <hr/>
