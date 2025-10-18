@@ -1,13 +1,13 @@
 export default function AddingAndRemovingToFromArrays() {
-  let numberArray1 = [1, 2, 3, 4, 5];
-  let stringArray1 = ["string1", "string2"];
-  let todoArray = [<li>Buy milk</li>, <li>Feed the pets</li>];
+  const numberArray1 = [1, 2, 3, 4, 5];
+  const stringArray1 = ["string1", "string2"];
+  const todoArray = ["Buy milk", "Feed the pets"];
 
-  numberArray1.push(6); // adding new items
+  numberArray1.push(6);
   stringArray1.push("string3");
-  todoArray.push(<li>Walk the dogs</li>);
+  todoArray.push("Walk the dogs");
 
-  numberArray1.splice(2, 1); // remove 1 item starting at 2
+  numberArray1.splice(2, 1);
   stringArray1.splice(1, 1);
 
   return (
@@ -17,7 +17,9 @@ export default function AddingAndRemovingToFromArrays() {
       stringArray1 = {stringArray1} <br />
       todoArray =
       <ul>
-        {todoArray}
+        {todoArray.map((todo, i) => (
+          <li key={`${todo}-${i}`}>{todo}</li>
+        ))}
       </ul>
       <hr />
     </div>
