@@ -1,35 +1,82 @@
 "use client";
-import ListGroup from "react-bootstrap/ListGroup";
-import ListGroupItem from "react-bootstrap/ListGroupItem";
+import { addModule, deleteModule, updateModule, editModule } from "./reducer";
+import { useSelector, useDispatch } from "react-redux";
+import { useState } from "react";
 import { useParams } from "next/navigation";
-import { modules } from "../../../Database";
-import type { Module } from "../../../Database/types";
+import ModulesControls from "./ModulesControls";
 import ModuleControlButtons from "./ModuleControlButtons";
-import LessonControlButtons from "./LessonControlButtons";
 
-export default function ModulesPage() {
-  const { cid } = useParams<{ cid: string }>();
-  const modulesForCourse: Module[] = modules.filter((m) => m.course === cid);
+type Module = {
+  _id: string;
+  name: string;
+  course: string;
+  lessons: string[];
+  editing?: boolean;
+};
+type ModulesState = { modulesReducer: { modules: Module[] } };
+
+export default function Modules() {
+  const dispatch = useDispatch();
+  const params = useParams();
+  const cid = (params?.cid ?? "") as string;
+  const [moduleName, setModuleName] = useState("");
+
+  const modules = useSelector(
+    (state: ModulesState) => state.modulesReducer.modules
+  );
+
+  const add = () => {
+    dispatch(addModule({ name: moduleName, course: cid }));
+    setModuleName("");
+  };
+  const del = (moduleId: string) => {
+    dispatch(deleteModule(moduleId));
+  };
+  const update = (m: Module) => {
+    dispatch(updateModule(m));
+  };
+  const edit = (moduleId: string) => {
+    dispatch(editModule(moduleId));
+  };
+
   return (
-    <ListGroup id="wd-modules" className="rounded-0">
-      {modulesForCourse.map((module) => (
-        <ListGroupItem key={module._id} className="wd-module p-0 mb-5 fs-5 border-0">
-          <div className="wd-title p-3 ps-2 bg-secondary d-flex justify-content-between align-items-center">
-            <div className="me-2 fs-3">{module.name}</div>
-            <ModuleControlButtons />
-          </div>
-          {module.lessons && (
-            <ListGroup className="wd-lessons rounded-0">
-              {module.lessons.map((lesson) => (
-                <ListGroupItem key={lesson._id} className="wd-lesson p-3 ps-1">
-                  <div className="me-2 fs-3">{lesson.name}</div>
-                  <LessonControlButtons />
-                </ListGroupItem>
-              ))}
-            </ListGroup>
-          )}
-        </ListGroupItem>
-      ))}
-    </ListGroup>
+    <div className="wd-modules">
+      <ModulesControls
+        moduleName={moduleName}
+        setModuleName={setModuleName}
+        addModule={add}
+      />
+      <ul className="list-group rounded-0">
+        {modules
+          .filter((m) => m.course === cid)
+          .map((module) => (
+            <li key={module._id} className="list-group-item">
+              {!module.editing && module.name}
+              {module.editing && (
+                <input
+                  className="form-control w-50 d-inline-block"
+                  defaultValue={module.name}
+                  onChange={(e) =>
+                    update({
+                      ...module,
+                      name: (e.target as HTMLInputElement).value,
+                    })
+                  }
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      update({ ...module, editing: false });
+                    }
+                  }}
+                />
+              )}
+              <ModuleControlButtons
+                moduleId={module._id}
+                deleteModule={del}
+                editModule={edit}
+              />
+            </li>
+          ))}
+      </ul>
+    </div>
   );
 }
