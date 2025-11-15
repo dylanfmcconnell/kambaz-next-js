@@ -35,7 +35,7 @@ export default function WorkingWithObjectsAsynchronously() {
     (field: keyof Assignment) =>
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const value =
-        field === "completed" ? e.target.checked : (e.target.value as any);
+        field === "completed" ? e.target.checked : e.target.value;
       setAssignment({ ...assignment, [field]: value } as Assignment);
     };
 
