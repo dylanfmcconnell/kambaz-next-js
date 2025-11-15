@@ -9,21 +9,21 @@ export default function ProtectedRoute({
 }: {
   children: React.ReactNode;
 }) {
-  const { currentUser, refreshProfile } = useSession();
+  const { currentUser, initializing } = useSession();
   const router = useRouter();
 
   useEffect(() => {
-    refreshProfile();
-  }, []);
-
-  useEffect(() => {
-    if (currentUser === null) {
+    if (!initializing && !currentUser) {
       router.push("/Account/Signin");
     }
-  }, [currentUser, router]);
+  }, [initializing, currentUser, router]);
+
+  if (initializing) {
+    return <div>Loading...</div>;
+  }
 
   if (!currentUser) {
-    return <div>Loading...</div>;
+    return null;
   }
 
   return <>{children}</>;

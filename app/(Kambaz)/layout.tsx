@@ -1,6 +1,8 @@
 "use client";
 
 import { SessionProvider } from "./Account/Session";
+import { Provider } from "react-redux";
+import store from "./store";
 
 export default function KambazLayout({
   children
@@ -9,7 +11,9 @@ export default function KambazLayout({
 }) {
   return (
     <SessionProvider>
-      <div className="container mt-4">{children}</div>
+      <Provider store={store}>
+        <div className="container mt-4">{children}</div>
+      </Provider>
     </SessionProvider>
   );
 }
