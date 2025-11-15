@@ -1,28 +1,31 @@
 "use client";
-import { useSelector } from "react-redux";
+
+import { useSession } from "./Session";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
-interface AccountState {
-  accountReducer: { currentUser: { _id: string } | null };
-}
-
 export default function ProtectedRoute({
-  children,
+  children
 }: {
   children: React.ReactNode;
 }) {
+  const { currentUser, initializing } = useSession();
   const router = useRouter();
-  const currentUser = useSelector(
-    (state: AccountState) => state.accountReducer.currentUser
-  );
+
   useEffect(() => {
-    if (!currentUser) {
+    if (!initializing && !currentUser) {
       router.push("/Account/Signin");
     }
-  }, [currentUser, router]);
+  }, [initializing, currentUser, router]);
+
+  if (initializing) {
+    return <div>Loading...</div>;
+  }
+
   if (!currentUser) {
+    // redirect in progress
     return null;
   }
+
   return <>{children}</>;
 }

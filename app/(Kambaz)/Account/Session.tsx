@@ -8,6 +8,7 @@ interface SessionContextType {
   currentUser: User | null;
   setCurrentUser: (user: User | null) => void;
   refreshProfile: () => Promise<void>;
+  initializing: boolean;
 }
 
 const SessionContext = createContext<SessionContextType | undefined>(
@@ -20,6 +21,7 @@ export const SessionProvider = ({
   children: React.ReactNode;
 }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [initializing, setInitializing] = useState(true);
 
   const refreshProfile = async () => {
     try {
@@ -27,16 +29,19 @@ export const SessionProvider = ({
       setCurrentUser(profile);
     } catch {
       setCurrentUser(null);
+    } finally {
+      setInitializing(false);
     }
   };
 
   useEffect(() => {
-    refreshProfile();
+    // initial load
+    void refreshProfile();
   }, []);
 
   return (
     <SessionContext.Provider
-      value={{ currentUser, setCurrentUser, refreshProfile }}
+      value={{ currentUser, setCurrentUser, refreshProfile, initializing }}
     >
       {children}
     </SessionContext.Provider>
