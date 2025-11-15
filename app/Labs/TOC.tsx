@@ -70,6 +70,25 @@ export default function TOC() {
           My GitHub repo for frontend
         </NavLink>
       </NavItem>
+      <NavItem>
+        <NavLink
+          href="https://github.com/dylanfmcconnell/kambaz-node-server-app.git"
+          as={Link}
+          target="_blank"
+        >
+          My GitHub repo for backend
+        </NavLink>
+      </NavItem>
+      <NavItem>
+        <NavLink
+          href="https://kambaz-node-server-app-lyh0.onrender.com"
+          as={Link}
+          target="_blank"
+        >
+          Server Root
+        </NavLink>
+      </NavItem>
     </Nav>
+
   );
 }
