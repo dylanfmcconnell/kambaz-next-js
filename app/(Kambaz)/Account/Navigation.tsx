@@ -31,7 +31,7 @@ export default function AccountNavigation() {
         Signout
       </button>
       <Link href="/Labs" className="list-group-item">
-        My GitHub repo
+        To Labs
       </Link>
     </div>
   );
