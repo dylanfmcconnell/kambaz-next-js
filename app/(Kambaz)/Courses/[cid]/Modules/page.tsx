@@ -1,82 +1,89 @@
 "use client";
-import { addModule, deleteModule, updateModule, editModule } from "./reducer";
-import { useSelector, useDispatch } from "react-redux";
-import { useState } from "react";
-import { useParams } from "next/navigation";
-import ModulesControls from "./ModulesControls";
-import ModuleControlButtons from "./ModuleControlButtons";
 
-type Module = {
-  _id: string;
-  name: string;
-  course: string;
-  lessons: string[];
-  editing?: boolean;
-};
-type ModulesState = { modulesReducer: { modules: Module[] } };
+import ProtectedRoute from "../../../ProtectedRoute";
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import * as client from "./client";
+import type { Module } from "./client";
 
-export default function Modules() {
-  const dispatch = useDispatch();
-  const params = useParams();
-  const cid = (params?.cid ?? "") as string;
-  const [moduleName, setModuleName] = useState("");
+export default function ModulesWrapper({
+  params
+}: {
+  params: { cid: string };
+}) {
+  const courseId = params.cid;
+  const [modules, setModules] = useState<Module[]>([]);
 
-  const modules = useSelector(
-    (state: ModulesState) => state.modulesReducer.modules
-  );
-
-  const add = () => {
-    dispatch(addModule({ name: moduleName, course: cid }));
-    setModuleName("");
+  const load = async () => {
+    const data = await client.fetchModules(courseId);
+    setModules(data);
   };
-  const del = (moduleId: string) => {
-    dispatch(deleteModule(moduleId));
+
+  useEffect(() => {
+    load();
+  }, [courseId]);
+
+  const createMod = async () => {
+    const newMod = await client.createModule(courseId, {
+      name: "New Module"
+    });
+    setModules([...modules, newMod]);
   };
-  const update = (m: Module) => {
-    dispatch(updateModule(m));
+
+  const renameMod = async (mod: Module, name: string) => {
+    const updated = await client.updateModule(mod._id, { name });
+    setModules(
+      modules.map(m => (m._id === mod._id ? updated : m))
+    );
   };
-  const edit = (moduleId: string) => {
-    dispatch(editModule(moduleId));
+
+  const deleteMod = async (mod: Module) => {
+    await client.deleteModule(mod._id);
+    setModules(modules.filter(m => m._id !== mod._id));
   };
 
   return (
-    <div className="wd-modules">
-      <ModulesControls
-        moduleName={moduleName}
-        setModuleName={setModuleName}
-        addModule={add}
-      />
-      <ul className="list-group rounded-0">
-        {modules
-          .filter((m) => m.course === cid)
-          .map((module) => (
-            <li key={module._id} className="list-group-item">
-              {!module.editing && module.name}
-              {module.editing && (
-                <input
-                  className="form-control w-50 d-inline-block"
-                  defaultValue={module.name}
-                  onChange={(e) =>
-                    update({
-                      ...module,
-                      name: (e.target as HTMLInputElement).value,
-                    })
-                  }
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      update({ ...module, editing: false });
-                    }
-                  }}
-                />
-              )}
-              <ModuleControlButtons
-                moduleId={module._id}
-                deleteModule={del}
-                editModule={edit}
+    <ProtectedRoute>
+      <div>
+        <h1>Modules</h1>
+
+        <Link href="/Courses" className="btn btn-secondary mb-3">
+          Back to My Courses
+        </Link>
+
+        <Link
+          href={`/Courses/${courseId}/Assignments`}
+          className="btn btn-outline-primary mb-3"
+        >
+          Assignments
+        </Link>
+
+        <button onClick={createMod} className="btn btn-success mb-3">
+          Add Module
+        </button>
+
+        <ul className="list-group">
+          {modules.map(mod => (
+            <li
+              key={mod._id}
+              className="list-group-item d-flex justify-content-between"
+            >
+              <input
+                className="form-control w-50"
+                defaultValue={mod.name}
+                onBlur={e => renameMod(mod, e.target.value)}
               />
+
+              <button
+                className="btn btn-danger btn-sm"
+                onClick={() => deleteMod(mod)}
+              >
+                Delete
+              </button>
             </li>
           ))}
-      </ul>
-    </div>
+        </ul>
+      </div>
+    </ProtectedRoute>
   );
 }

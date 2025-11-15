@@ -1,77 +1,52 @@
 "use client";
-import { useSelector, useDispatch } from "react-redux";
-import { updateCurrentUser } from "../reducer";
-import { FormControl } from "react-bootstrap";
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 
-type BasicUser = {
-  _id: string;
-  role?: "ADMIN" | "FACULTY" | "STUDENT";
-  username?: string;
-  password?: string;
-  firstName?: string;
-  lastName?: string;
-} & Record<string, unknown>;
+import { useEffect, useState } from "react";
+import * as client from "../client";
+import { useSession } from "../Session";
 
-type AccountState = { accountReducer: { currentUser: BasicUser | null } };
-
-export default function Profile() {
-  const router = useRouter();
-  const dispatch = useDispatch();
-  const currentUser = useSelector(
-    (state: AccountState) => state.accountReducer.currentUser
-  );
-  const [user, setUser] = useState<BasicUser | null>(currentUser ?? null);
+export default function ProfilePage() {
+  const { currentUser, setCurrentUser, refreshProfile } = useSession();
+  const [form, setForm] = useState(currentUser || null);
 
   useEffect(() => {
-    if (!currentUser) router.push("/Account/Signin");
-  }, [currentUser, router]);
+    refreshProfile();
+  }, []);
 
-  if (!currentUser || !user) return null;
+  useEffect(() => {
+    setForm(currentUser);
+  }, [currentUser]);
+
+  if (!form) {
+    return <div>Loading profile...</div>;
+  }
+
+  const updateField = (field: string, value: string) =>
+    setForm(prev => (prev ? { ...prev, [field]: value } : prev));
+
+  const save = async () => {
+    const updated = await client.updateUser(form._id, form);
+    setCurrentUser(updated);
+    alert("Profile updated");
+  };
 
   return (
-    <div id="wd-profile-screen" style={{ maxWidth: 520 }}>
+    <div>
       <h1>Profile</h1>
-      <FormControl
-        className="mb-2"
-        placeholder="username"
-        value={user.username ?? ""}
-        onChange={(e) =>
-          setUser({ ...user, username: (e.target as HTMLInputElement).value })
-        }
-      />
-      <FormControl
-        className="mb-2"
-        placeholder="password"
-        type="password"
-        value={user.password ?? ""}
-        onChange={(e) =>
-          setUser({ ...user, password: (e.target as HTMLInputElement).value })
-        }
-      />
-      <FormControl
-        className="mb-2"
-        placeholder="First name"
-        value={(user.firstName as string | undefined) ?? ""}
-        onChange={(e) =>
-          setUser({ ...user, firstName: (e.target as HTMLInputElement).value })
-        }
-      />
-      <FormControl
-        className="mb-2"
-        placeholder="Last name"
-        value={(user.lastName as string | undefined) ?? ""}
-        onChange={(e) =>
-          setUser({ ...user, lastName: (e.target as HTMLInputElement).value })
-        }
-      />
-      <button
-        className="btn btn-primary"
-        id="wd-update-profile-click"
-        onClick={() => dispatch(updateCurrentUser(user))}
-      >
-        Update
+
+      {Object.entries(form).map(([field, value]) => {
+        if (field === "_id") return null;
+        return (
+          <input
+            key={field}
+            className="form-control mb-2"
+            value={String(value)}
+            onChange={e => updateField(field, e.target.value)}
+          />
+        );
+      })}
+
+      <button onClick={save} className="btn btn-success w-100 mt-2">
+        Save
       </button>
     </div>
   );

@@ -9,6 +9,7 @@ export default function Labs() {
        <li className="nav-item"><Link className="nav-link" href="/Labs/Lab2" id="wd-lab2-link">Lab 2</Link></li>
        <li className="nav-item"><Link className="nav-link" href="/Labs/Lab3" id="wd-lab3-link">Lab 3</Link></li>
        <li className="nav-item"><Link className="nav-link" href="/Labs/Lab4" id="wd-lab4-link">Lab 4</Link></li>
+       <li className="nav-item"><Link className="nav-link" href="/Labs/Lab5" id="wd-lab4-link">Lab 5</Link></li>
      </ul>
    </div>
 );}

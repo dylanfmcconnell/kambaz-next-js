@@ -1,21 +1,29 @@
 "use client";
-import { ReactNode } from "react";
-import KambazNavigation from "./Navigation";
-import "./styles.css";
-import { Provider } from "react-redux";
-import store from "./store";
 
-export default function KambazLayout({ children }: { children: ReactNode }) {
+import { useSession } from "./Account/Session";
+import * as client from "./Account/client";
+import { useRouter } from "next/navigation";
+
+export default function KambazLayout({ children }: { children: React.ReactNode }) {
+  const { currentUser, setCurrentUser } = useSession();
+  const router = useRouter();
+
+  const signout = async () => {
+    await client.signout();
+    setCurrentUser(null);
+    router.push("/Account/Signin");
+  };
+
   return (
-    <Provider store={store}>
-      <div id="wd-kambaz">
-        <div className="d-flex">
-          <div>
-            <KambazNavigation />
-          </div>
-          <div className="wd-main-content-offset p-3 flex-fill">{children}</div>
+    <div className="container mt-4">
+      {currentUser && (
+        <div className="d-flex justify-content-end mb-3">
+          <button className="btn btn-outline-danger" onClick={signout}>
+            Signout
+          </button>
         </div>
-      </div>
-    </Provider>
+      )}
+      {children}
+    </div>
   );
 }

@@ -1,81 +1,125 @@
 "use client";
-import { useSelector, useDispatch } from "react-redux";
-import { useParams, useRouter } from "next/navigation";
-import { useState } from "react";
-import { deleteAssignment } from "./reducer";
-import type { Assignment } from "../../../Database/types";
 
-type RootAssignments = { assignmentsReducer: { assignments: Assignment[] } };
-type AccountState = { accountReducer: { currentUser: { _id: string; role?: "ADMIN"|"FACULTY"|"STUDENT" } | null } };
+import ProtectedRoute from "../../../ProtectedRoute";
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import * as client from "./client";
+import type { Assignment } from "./client";
 
-export default function Assignments() {
-  const dispatch = useDispatch();
-  const router = useRouter();
-  const { cid } = useParams() as { cid: string };
+export default function AssignmentsWrapper({
+  params
+}: {
+  params: { cid: string };
+}) {
+  const courseId = params.cid;
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
 
-  const assignments = useSelector((s: RootAssignments) => s.assignmentsReducer.assignments)
-    .filter(a => a.course === cid);
+  const load = async () => {
+    const data = await client.fetchAssignments(courseId);
+    setAssignments(data);
+  };
 
-  const currentUser = useSelector((s: AccountState) => s.accountReducer.currentUser);
-  const isFaculty = currentUser?.role === "FACULTY" || currentUser?.role === "ADMIN";
-  const [confirmId, setConfirmId] = useState<string | null>(null);
+  useEffect(() => {
+    load();
+  }, [courseId]);
+
+  const createAssignment = async () => {
+    const newA = await client.createAssignment(courseId, {
+      title: "New Assignment",
+      description: "",
+      due: "",
+      completed: false
+    });
+    setAssignments([...assignments, newA]);
+  };
+
+  const deleteA = async (assignment: Assignment) => {
+    await client.deleteAssignment(assignment._id);
+    setAssignments(assignments.filter(a => a._id !== assignment._id));
+  };
+
+  const updateA = async (
+    assignment: Assignment,
+    updates: Partial<Assignment>
+  ) => {
+    const updated = await client.updateAssignment(
+      assignment._id,
+      updates
+    );
+    setAssignments(
+      assignments.map(a => (a._id === assignment._id ? updated : a))
+    );
+  };
+
+  const toggleCompleted = async (a: Assignment) => {
+    await updateA(a, { completed: !a.completed });
+  };
 
   return (
-    <div id="wd-assignments">
-      <div className="d-flex align-items-center justify-content-between">
-        <h2>Assignments</h2>
-        {isFaculty && (
-          <button className="btn btn-danger"
-                  onClick={() => router.push(`/Courses/${cid}/Assignments/Editor`)}
-                  id="wd-add-assignment-click">
-            + Assignment
-          </button>
-        )}
-      </div>
+    <ProtectedRoute>
+      <div>
+        <h1>Assignments</h1>
 
-      <ul className="list-group">
-        {assignments.map((a) => (
-          <li key={a._id} className="list-group-item d-flex align-items-center">
-            <div className="flex-grow-1"
-                 role={isFaculty ? "button" : "presentation"}
-                 onClick={() => isFaculty && router.push(`/Courses/${cid}/Assignments/Editor?aid=${a._id}`)}>
-              <strong>{a.title}</strong>
-              <div className="text-secondary small">
-                {a.points} pts{a.due ? ` · Due ${a.due}` : ""}
-              </div>
-            </div>
-            {isFaculty && (
-              <>
-                <button className="btn btn-outline-primary me-2"
-                        onClick={() => router.push(`/Courses/${cid}/Assignments/Editor?aid=${a._id}`)}>
-                  Edit
-                </button>
-                <button className="btn btn-outline-danger" onClick={() => setConfirmId(a._id)}>
+        <Link
+          href={`/Courses/${courseId}/Modules`}
+          className="btn btn-secondary mb-3"
+        >
+          Back to Modules
+        </Link>
+
+        <button onClick={createAssignment} className="btn btn-success mb-3">
+          Add Assignment
+        </button>
+
+        <ul className="list-group">
+          {assignments.map(a => (
+            <li
+              key={a._id}
+              className="list-group-item d-flex flex-column gap-2"
+            >
+              <div className="d-flex justify-content-between align-items-center">
+                <input
+                  className="form-control w-50"
+                  defaultValue={a.title}
+                  onBlur={e => updateA(a, { title: e.target.value })}
+                />
+
+                <button
+                  className="btn btn-danger btn-sm"
+                  onClick={() => deleteA(a)}
+                >
                   Delete
                 </button>
-              </>
-            )}
-          </li>
-        ))}
-      </ul>
-
-      {confirmId && (
-        <div className="modal d-block" role="dialog" aria-modal>
-          <div className="modal-dialog">
-            <div className="modal-content">
-              <div className="modal-header"><h5 className="modal-title">Confirm delete</h5></div>
-              <div className="modal-body">Are you sure you want to remove this assignment?</div>
-              <div className="modal-footer">
-                <button className="btn btn-secondary" onClick={() => setConfirmId(null)}>Cancel</button>
-                <button className="btn btn-danger"
-                        onClick={() => { dispatch(deleteAssignment(confirmId)); setConfirmId(null); }}>
-                  Yes, delete
-                </button>
               </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+
+              <textarea
+                className="form-control"
+                defaultValue={a.description}
+                onBlur={e => updateA(a, { description: e.target.value })}
+              />
+
+              <div className="d-flex justify-content-between">
+                <input
+                  className="form-control w-50"
+                  type="date"
+                  defaultValue={a.due}
+                  onBlur={e => updateA(a, { due: e.target.value })}
+                />
+
+                <div className="form-check">
+                  <input
+                    type="checkbox"
+                    className="form-check-input"
+                    checked={a.completed}
+                    onChange={() => toggleCompleted(a)}
+                  />
+                  <label className="form-check-label ms-1">Completed</label>
+                </div>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </ProtectedRoute>
   );
 }

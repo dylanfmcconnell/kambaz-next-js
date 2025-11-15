@@ -1,41 +1,58 @@
 "use client";
-import Link from "next/link";
-import { Form, Button } from "react-bootstrap";
 
-export default function Signup() {
+import { useState } from "react";
+import * as client from "../client";
+import { useRouter } from "next/navigation";
+import { useSession } from "../Session";
+
+export default function SignupPage() {
+  const router = useRouter();
+  const { setCurrentUser } = useSession();
+
+  const [form, setForm] = useState({
+    username: "",
+    password: "",
+    firstName: "",
+    lastName: "",
+    email: ""
+  });
+
+  const updateField = (field: string, value: string) =>
+    setForm({ ...form, [field]: value });
+
+  const signup = async () => {
+  if (!form.username || !form.password) {
+    alert("Username and password are required");
+    return;
+  }
+
+  try {
+    const user = await client.signup(form);
+    setCurrentUser(user);
+    router.push("/Kambaz");
+  } catch (err) {
+    alert("Signup failed — username may already be taken.");
+  }
+};
+
+
   return (
-    <div id="wd-signup-screen" style={{ maxWidth: 480 }}>
-      <h1>Sign up</h1>
-      <Form>
-        <Form.Group className="mb-2">
-          <Form.Label>Username</Form.Label>
-          <Form.Control placeholder="alice" />
-        </Form.Group>
-        <Form.Group className="mb-2">
-          <Form.Label>Password</Form.Label>
-          <Form.Control type="password" placeholder="123" />
-        </Form.Group>
-        <Form.Group className="mb-2">
-          <Form.Label>First name</Form.Label>
-          <Form.Control placeholder="Alice" />
-        </Form.Group>
-        <Form.Group className="mb-2">
-          <Form.Label>Last name</Form.Label>
-          <Form.Control placeholder="Wonderland" />
-        </Form.Group>
-        <Form.Group className="mb-3">
-          <Form.Label>Date of birth</Form.Label>
-          <Form.Control type="date" />
-        </Form.Group>
-        <Form.Group className="mb-3">
-          <Form.Label>Email</Form.Label>
-          <Form.Control type="email" placeholder="alice@wonderland.com" />
-        </Form.Group>
-        <Button className="w-100 mb-2">Signup</Button>
-        <div className="text-center">
-          <Link href="/Account/Signin">Signin</Link>
-        </div>
-      </Form>
+    <div>
+      <h1>Signup</h1>
+
+      {Object.keys(form).map(field => (
+        <input
+          key={field}
+          placeholder={field}
+          className="form-control mb-2"
+          value={(form as Record<string, string>)[field]}
+          onChange={e => updateField(field, e.target.value)}
+        />
+      ))}
+
+      <button onClick={signup} className="btn btn-primary w-100 mt-2">
+        Signup
+      </button>
     </div>
   );
 }

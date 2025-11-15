@@ -1,66 +1,56 @@
 "use client";
-import Link from "next/link";
-import { FormControl } from "react-bootstrap";
+
 import { useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { signin } from "../reducer";
+import * as client from "../client";
 import { useRouter } from "next/navigation";
+import { useSession } from "../Session";
 
-type AccountState = {
-  accountReducer: { currentUser: { _id: string } | null };
-};
-
-export default function Signin() {
+export default function SigninPage() {
+  const router = useRouter();
+  const { setCurrentUser } = useSession();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const dispatch = useDispatch();
-  const router = useRouter();
-  const currentUser = useSelector(
-    (state: AccountState) => state.accountReducer.currentUser
-  );
+  const [error, setError] = useState("");
 
-  const doSignin = () => {
-    dispatch(signin({ username, password }));
+  const signin = async () => {
+    try {
+      const user = await client.signin({ username, password });
+      setCurrentUser(user);
+      router.push("/Kambaz");
+    } catch (err) {
+      setError("Invalid username or password");
+    }
   };
 
-  if (currentUser) {
-    router.push("/Account/Profile");
-    return null;
-  }
-
   return (
-    <div id="wd-signin-screen" style={{ maxWidth: 420 }}>
-      <h1>Sign in</h1>
-      <FormControl
-        id="wd-username"
+    <div>
+      <h1>Signin</h1>
+      {error && <div className="alert alert-danger">{error}</div>}
+
+      <input
         placeholder="username"
-        className="mb-2"
+        className="form-control mb-2"
         value={username}
-        onChange={(e) => setUsername((e.target as HTMLInputElement).value)}
+        onChange={e => setUsername(e.target.value)}
       />
-      <FormControl
-        id="wd-password"
+      <input
         placeholder="password"
+        className="form-control mb-2"
         type="password"
-        className="mb-2"
         value={password}
-        onChange={(e) => setPassword((e.target as HTMLInputElement).value)}
+        onChange={e => setPassword(e.target.value)}
       />
-      <button
-        id="wd-signin-btn"
-        onClick={doSignin}
-        className="btn btn-primary w-100 mb-2"
-      >
+
+      <button onClick={signin} className="btn btn-primary w-100 mt-2">
         Signin
       </button>
-      <Link id="wd-signup-link" href="/Account/Signup">
+
+      <button
+        onClick={() => router.push("/Account/Signup")}
+        className="btn btn-link w-100 mt-2"
+      >
         Signup
-      </Link>
-      <div className="mt-3">
-        <Link id="wd-labs-link" href="/Labs">
-          Go to Labs
-        </Link>
-      </div>
+      </button>
     </div>
   );
 }
