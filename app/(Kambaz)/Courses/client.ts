@@ -57,7 +57,20 @@ export const unenrollFromCourse = async (
   await api.delete(`/api/users/${userId}/courses/${courseId}`);
 };
 
-export const findUsersForCourse = async (courseId: string): Promise<any[]> => {
-  const response = await api.get(`/api/courses/${courseId}/users`);
+export interface CourseUser {
+  _id: string;
+  username: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  role: string;
+  loginId: string;
+  section: string;
+  lastActivity: string;
+  totalActivity: string;
+}
+
+export const findUsersForCourse = async (courseId: string): Promise<CourseUser[]> => {
+  const response = await api.get<CourseUser[]>(`/api/courses/${courseId}/users`);
   return response.data;
 };

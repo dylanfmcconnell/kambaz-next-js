@@ -4,6 +4,7 @@ import { FaUserCircle } from "react-icons/fa";
 import { FaCheck, FaPencil } from "react-icons/fa6";
 import { IoCloseSharp } from "react-icons/io5";
 import * as client from "../../../Account/client";
+import type { User } from "../../../Account/client";
 
 interface PeopleDetailsProps {
   uid: string | null;
@@ -11,7 +12,7 @@ interface PeopleDetailsProps {
 }
 
 export default function PeopleDetails({ uid, onClose }: PeopleDetailsProps) {
-  const [user, setUser] = useState<any>({});
+  const [user, setUser] = useState<User | null>(null);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [role, setRole] = useState("");
@@ -22,15 +23,15 @@ export default function PeopleDetails({ uid, onClose }: PeopleDetailsProps) {
     const userData = await client.findUserById(uid);
     setUser(userData);
     setName(`${userData.firstName} ${userData.lastName}`);
-    setEmail(userData.email || "");
-    setRole(userData.role || "");
+    setEmail(userData.email ?? "");
+    setRole(userData.role ?? "");
   };
 
   useEffect(() => {
     if (uid) fetchUser();
   }, [uid]);
 
-  if (!uid) return null;
+  if (!uid || !user) return null;
 
   const deleteUser = async (uid: string) => {
     await client.deleteUser(uid);
@@ -38,6 +39,7 @@ export default function PeopleDetails({ uid, onClose }: PeopleDetailsProps) {
   };
 
   const saveUser = async () => {
+    if (!user) return;
     const [firstName, lastName] = name.split(" ");
     const updatedUser = { ...user, firstName, lastName, email, role };
     await client.updateUser(updatedUser._id, updatedUser);

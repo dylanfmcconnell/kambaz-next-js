@@ -5,10 +5,11 @@ import { FaPlus } from "react-icons/fa";
 import { Form } from "react-bootstrap";
 import PeopleTable from "../../Courses/[cid]/People/Table";
 import * as client from "../client";
+import type { User } from "../client";
 
 export default function Users() {
   const { uid } = useParams();
-  const [users, setUsers] = useState<any[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [role, setRole] = useState("");
   const [name, setName] = useState("");
 
