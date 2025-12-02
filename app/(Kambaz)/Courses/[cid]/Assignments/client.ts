@@ -3,10 +3,13 @@ import api from "@/app/lib/api";
 export interface Assignment {
   _id: string;
   title: string;
-  description: string;
+  description?: string;
   course: string;
-  due: string;
-  completed: boolean;
+  due?: string;
+  points?: number;
+  availableFrom?: string;
+  availableUntil?: string;
+  completed?: boolean;
 }
 
 export const fetchAssignments = async (
@@ -14,6 +17,15 @@ export const fetchAssignments = async (
 ): Promise<Assignment[]> => {
   const response = await api.get<Assignment[]>(
     `/api/courses/${courseId}/assignments`
+  );
+  return response.data;
+};
+
+export const fetchAssignment = async (
+  assignmentId: string
+): Promise<Assignment> => {
+  const response = await api.get<Assignment>(
+    `/api/assignments/${assignmentId}`
   );
   return response.data;
 };

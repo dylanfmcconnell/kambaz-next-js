@@ -1,55 +1,80 @@
 "use client";
-import { useSelector } from "react-redux";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect } from "react";
-import type { Enrollment, Course } from "../../Database/types";
-
-type AccountState = {
-  accountReducer: {
-    currentUser:
-      | { _id: string; role?: "ADMIN" | "FACULTY" | "STUDENT" }
-      | null;
-  };
-};
-type RootEnrollments = { enrollmentsReducer: { enrollments: Enrollment[] } };
-type RootCourses = { coursesReducer: { courses: Course[] } };
+import { useEffect, useState } from "react";
+import { useSession } from "../../Account/Session";
+import * as coursesClient from "../client";
+import CourseNavigation from "./Navigation";
+import Breadcrumb from "./Breadcrumb";
 
 export default function CourseLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const params = useParams();
   const { cid } = params as { cid: string };
+  const { currentUser, initializing } = useSession();
 
-  const currentUser = useSelector(
-    (s: AccountState) => s.accountReducer.currentUser
-  );
-  const enrollments = useSelector(
-    (s: RootEnrollments) => s.enrollmentsReducer.enrollments
-  );
-  const courses = useSelector((s: RootCourses) => s.coursesReducer.courses);
-
-  const courseExists = courses.some((c) => c._id === cid);
-  const isFaculty =
-    currentUser?.role === "FACULTY" || currentUser?.role === "ADMIN";
-  const enrolled =
-    !!currentUser &&
-    enrollments.some((e) => e.user === currentUser._id && e.course === cid);
+  const [loading, setLoading] = useState(true);
+  const [authorized, setAuthorized] = useState(false);
 
   useEffect(() => {
-    if (!courseExists) {
-      router.replace("/Dashboard");
-      return;
-    }
-    if (!currentUser) {
-      router.replace("/Account/Signin");
-      return;
-    }
-    if (!isFaculty && !enrolled) {
-      router.replace("/Dashboard");
-    }
-  }, [courseExists, currentUser, isFaculty, enrolled, router]);
+    const checkAccess = async () => {
+      // Wait for session to initialize
+      if (initializing) return;
 
-  if (!courseExists || !currentUser || (!isFaculty && !enrolled)) {
+      // If no user, redirect to signin
+      if (!currentUser) {
+        router.replace("/Account/Signin");
+        return;
+      }
+
+      const isFaculty = currentUser.role === "FACULTY" || currentUser.role === "ADMIN";
+
+      // Faculty/Admin can access any course
+      if (isFaculty) {
+        setAuthorized(true);
+        setLoading(false);
+        return;
+      }
+
+      // For students, check if enrolled
+      try {
+        const myCourses = await coursesClient.fetchMyCourses();
+        const isEnrolled = myCourses.some((c) => c._id === cid);
+        
+        if (isEnrolled) {
+          setAuthorized(true);
+        } else {
+          router.replace("/Dashboard");
+        }
+      } catch (error) {
+        console.error("Error checking enrollment:", error);
+        router.replace("/Dashboard");
+      }
+      
+      setLoading(false);
+    };
+
+    checkAccess();
+  }, [cid, currentUser, initializing, router]);
+
+  if (initializing || loading) {
+    return <div>Loading...</div>;
+  }
+
+  if (!authorized) {
     return null;
   }
-  return <>{children}</>;
+
+  return (
+    <div id="wd-course">
+      <Breadcrumb />
+      <div className="d-flex">
+        <div className="d-none d-md-block">
+          <CourseNavigation />
+        </div>
+        <div className="flex-fill p-3">
+          {children}
+        </div>
+      </div>
+    </div>
+  );
 }

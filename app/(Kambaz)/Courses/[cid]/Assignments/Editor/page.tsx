@@ -1,13 +1,10 @@
 "use client";
-import { useSelector, useDispatch } from "react-redux";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { addAssignment, updateAssignment } from "../reducer";
-import type { Assignment } from "../../../../Database/types";
 import { FormControl } from "react-bootstrap";
-
-type RootAssignments = { assignmentsReducer: { assignments: Assignment[] } };
-type AccountState = { accountReducer: { currentUser: { _id: string; role?: "ADMIN"|"FACULTY"|"STUDENT" } | null } };
+import * as client from "../client";
+import type { Assignment } from "../client";
+import { useSession } from "../../../../Account/Session";
 
 type Draft = {
   title: string;
@@ -28,51 +25,71 @@ const emptyDraft: Draft = {
 };
 
 export default function AssignmentEditor() {
-  const dispatch = useDispatch();
   const router = useRouter();
   const search = useSearchParams();
   const { cid } = useParams() as { cid: string };
-  const aid = search.get("aid"); // if you ever switch to [aid], replace with: const { aid } = useParams() as { cid: string; aid?: string };
+  const aid = search.get("aid");
 
-  const currentUser = useSelector((s: AccountState) => s.accountReducer.currentUser);
+  const { currentUser } = useSession();
   const isFaculty = currentUser?.role === "FACULTY" || currentUser?.role === "ADMIN";
-  const assignments = useSelector((s: RootAssignments) => s.assignmentsReducer.assignments);
-  const existing = aid ? assignments.find(a => a._id === aid) : undefined;
 
   const [draft, setDraft] = useState<Draft>(emptyDraft);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (aid && existing) {
-      setDraft({
-        title: existing.title ?? "",
-        description: existing.description ?? "",
-        points: existing.points ?? 0,
-        due: existing.due ?? "",
-        availableFrom: existing.availableFrom ?? "",
-        availableUntil: existing.availableUntil ?? "",
-      });
-    } else {
-      setDraft(emptyDraft);
+    const loadAssignment = async () => {
+      if (aid) {
+        try {
+          setLoading(true);
+          const existing = await client.fetchAssignment(aid);
+          setDraft({
+            title: existing.title ?? "",
+            description: existing.description ?? "",
+            points: existing.points ?? 100,
+            due: existing.due ?? "",
+            availableFrom: existing.availableFrom ?? "",
+            availableUntil: existing.availableUntil ?? "",
+          });
+        } catch (err) {
+          console.error("Failed to load assignment", err);
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        setDraft(emptyDraft);
+      }
+    };
+    loadAssignment();
+  }, [aid]);
+
+  useEffect(() => {
+    if (currentUser && !isFaculty) {
+      router.replace(`/Courses/${cid}/Assignments`);
     }
-  }, [aid, existing]);
+  }, [currentUser, isFaculty, cid, router]);
 
   if (!isFaculty) {
-    router.replace(`/Courses/${cid}/Assignments`);
     return null;
   }
 
-  const save = () => {
-    if (aid && existing) {
-      const updated: Assignment = { ...existing, ...draft };
-      dispatch(updateAssignment(updated));
-    } else {
-      const newAssignment: Omit<Assignment, "_id"> = { course: cid, ...draft };
-      dispatch(addAssignment(newAssignment));
+  const save = async () => {
+    try {
+      if (aid) {
+        await client.updateAssignment(aid, draft);
+      } else {
+        await client.createAssignment(cid, { ...draft, course: cid });
+      }
+      router.push(`/Courses/${cid}/Assignments`);
+    } catch (err) {
+      console.error("Failed to save assignment", err);
     }
-    router.push(`/Courses/${cid}/Assignments`);
   };
 
   const cancel = () => router.push(`/Courses/${cid}/Assignments`);
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div id="wd-assignment-editor" style={{ maxWidth: 720 }}>
@@ -81,7 +98,7 @@ export default function AssignmentEditor() {
       <label className="form-label mt-2">Name</label>
       <FormControl
         value={draft.title}
-        onChange={(e) => setDraft({ ...draft, title: (e.target as HTMLInputElement).value })}
+        onChange={(e) => setDraft({ ...draft, title: e.target.value })}
       />
 
       <label className="form-label mt-3">Description</label>
@@ -89,35 +106,35 @@ export default function AssignmentEditor() {
         as="textarea"
         rows={4}
         value={draft.description}
-        onChange={(e) => setDraft({ ...draft, description: (e.target as HTMLTextAreaElement).value })}
+        onChange={(e) => setDraft({ ...draft, description: e.target.value })}
       />
 
       <label className="form-label mt-3">Points</label>
       <FormControl
         type="number"
         value={draft.points}
-        onChange={(e) => setDraft({ ...draft, points: parseInt((e.target as HTMLInputElement).value || "0", 10) })}
+        onChange={(e) => setDraft({ ...draft, points: parseInt(e.target.value || "0", 10) })}
       />
 
       <label className="form-label mt-3">Due date</label>
       <FormControl
         type="date"
         value={draft.due}
-        onChange={(e) => setDraft({ ...draft, due: (e.target as HTMLInputElement).value })}
+        onChange={(e) => setDraft({ ...draft, due: e.target.value })}
       />
 
       <label className="form-label mt-3">Available from</label>
       <FormControl
         type="date"
         value={draft.availableFrom}
-        onChange={(e) => setDraft({ ...draft, availableFrom: (e.target as HTMLInputElement).value })}
+        onChange={(e) => setDraft({ ...draft, availableFrom: e.target.value })}
       />
 
       <label className="form-label mt-3">Available until</label>
       <FormControl
         type="date"
         value={draft.availableUntil}
-        onChange={(e) => setDraft({ ...draft, availableUntil: (e.target as HTMLInputElement).value })}
+        onChange={(e) => setDraft({ ...draft, availableUntil: e.target.value })}
       />
 
       <div className="mt-4 d-flex gap-2">

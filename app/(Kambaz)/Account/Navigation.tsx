@@ -1,38 +1,78 @@
 "use client";
 import Link from "next/link";
-import { useSelector, useDispatch } from "react-redux";
-import { signout } from "./reducer";
-
-type AccountState = { accountReducer: { currentUser: { username: string } | null } };
+import { usePathname, useRouter } from "next/navigation";
+import { Nav, NavItem, NavLink } from "react-bootstrap";
+import { useSession } from "./Session";
+import * as client from "./client";
 
 export default function AccountNavigation() {
-  const currentUser = useSelector(
-    (state: AccountState) => state.accountReducer.currentUser
-  );
-  const dispatch = useDispatch();
+  const { currentUser, setCurrentUser } = useSession();
+  const pathname = usePathname();
+  const router = useRouter();
+
+  const handleSignout = async () => {
+    await client.signout();
+    setCurrentUser(null);
+    router.push("/Account/Signin");
+  };
+
   return (
-    <div id="wd-account-navigation" className="list-group">
-      <Link
-        href="/Account/Signin"
-        className={`list-group-item ${!currentUser ? "active" : ""}`}
-      >
-        Signin
-      </Link>
-      <Link href="/Account/Signup" className="list-group-item">
-        Signup
-      </Link>
-      <Link
-        href="/Account/Profile"
-        className={`list-group-item ${currentUser ? "active" : ""}`}
-      >
-        Profile
-      </Link>
-      <button className="list-group-item" onClick={() => dispatch(signout())}>
-        Signout
-      </button>
-      <Link href="/Labs" className="list-group-item">
-        To Labs
-      </Link>
-    </div>
+    <Nav variant="pills" className="flex-column">
+      {!currentUser && (
+        <>
+          <NavItem>
+            <NavLink 
+              as={Link} 
+              href="/Account/Signin"
+              active={pathname.endsWith("Signin")}
+            >
+              Signin
+            </NavLink>
+          </NavItem>
+          <NavItem>
+            <NavLink 
+              as={Link} 
+              href="/Account/Signup"
+              active={pathname.endsWith("Signup")}
+            >
+              Signup
+            </NavLink>
+          </NavItem>
+        </>
+      )}
+      {currentUser && (
+        <>
+          <NavItem>
+            <NavLink 
+              as={Link} 
+              href="/Account/Profile"
+              active={pathname.endsWith("Profile")}
+            >
+              Profile
+            </NavLink>
+          </NavItem>
+          {currentUser.role === "ADMIN" && (
+            <NavItem>
+              <NavLink 
+                as={Link} 
+                href="/Account/Users"
+                active={pathname.endsWith("Users")}
+              >
+                Users
+              </NavLink>
+            </NavItem>
+          )}
+          <NavItem>
+            <NavLink 
+              as="button" 
+              onClick={handleSignout}
+              className="text-start"
+            >
+              Signout
+            </NavLink>
+          </NavItem>
+        </>
+      )}
+    </Nav>
   );
 }

@@ -44,3 +44,32 @@ export const updateUser = async (
   const response = await api.put<User>(`/api/users/${userId}`, updates);
   return response.data;
 };
+
+export const findAllUsers = async (): Promise<User[]> => {
+  const response = await api.get<User[]>("/api/users");
+  return response.data;
+};
+
+export const findUsersByRole = async (role: string): Promise<User[]> => {
+  const response = await api.get<User[]>(`/api/users?role=${role}`);
+  return response.data;
+};
+
+export const findUserByPartialName = async (name: string): Promise<User[]> => {
+  const response = await api.get<User[]>(`/api/users?name=${name}`);
+  return response.data;
+};
+
+export const findUserById = async (id: string): Promise<User> => {
+  const response = await api.get<User>(`/api/users/${id}`);
+  return response.data;
+};
+
+export const deleteUser = async (userId: string): Promise<void> => {
+  await api.delete(`/api/users/${userId}`);
+};
+
+export const createUser = async (user: Partial<User>): Promise<User> => {
+  const response = await api.post<User>("/api/users", user);
+  return response.data;
+};

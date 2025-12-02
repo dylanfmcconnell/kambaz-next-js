@@ -1,49 +1,45 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import db from "../Database";
-import type { User as DbUser } from "../Database/types";
 
-// Local credential-friendly view: username/password may or may not exist on your DbUser
-type CredentialUser = { _id: string } & Partial<{
-  username: string;
-  password: string;
-  role: "ADMIN" | "FACULTY" | "STUDENT";
-}>;
+export interface User {
+  _id: string;
+  username?: string;
+  password?: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  role?: string;
+  loginId?: string;
+  section?: string;
+  lastActivity?: string;
+  totalActivity?: string;
+  dob?: string;
+}
 
 type AccountState = {
-  users: CredentialUser[];
-  currentUser: CredentialUser | null;
+  currentUser: User | null;
 };
 
 const initialState: AccountState = {
-  users: (db.users as unknown as CredentialUser[]),
   currentUser: null,
 };
-
-type SigninPayload = { username: string; password: string };
-type UpdatePayload = { _id: string } & Record<string, unknown>;
 
 const accountSlice = createSlice({
   name: "account",
   initialState,
   reducers: {
-    signin: (state, { payload }: PayloadAction<SigninPayload>) => {
-      const found = state.users.find(
-        (u) => u.username === payload.username && u.password === payload.password
-      );
-      state.currentUser = found ?? null;
+    setCurrentUser: (state, { payload }: PayloadAction<User | null>) => {
+      state.currentUser = payload;
     },
     signout: (state) => {
       state.currentUser = null;
     },
-    // Accept a partial update (don’t force exact DbUser shape).
-    updateCurrentUser: (state, { payload }: PayloadAction<UpdatePayload>) => {
-      state.currentUser = { ...(state.currentUser ?? {}), ...payload };
-      state.users = state.users.map((u) =>
-        u._id === payload._id ? ({ ...u, ...payload }) : u
-      );
+    updateCurrentUser: (state, { payload }: PayloadAction<Partial<User>>) => {
+      if (state.currentUser) {
+        state.currentUser = { ...state.currentUser, ...payload };
+      }
     },
   },
 });
 
-export const { signin, signout, updateCurrentUser } = accountSlice.actions;
+export const { setCurrentUser, signout, updateCurrentUser } = accountSlice.actions;
 export default accountSlice.reducer;
