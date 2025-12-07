@@ -12,7 +12,8 @@ export default function CourseNavigation() {
     <ListGroup className="rounded-0">
       {items.map((label) => {
         const href = `/Courses/${cid}/${label}`;
-        const active = pathname === href;
+        // Check if current path starts with this nav item's path (for nested routes)
+        const active = pathname === href || pathname.startsWith(`${href}/`);
         return (
           <ListGroup.Item key={label}
                           as={Link}
