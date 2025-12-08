@@ -16,7 +16,7 @@ export default function SigninPage() {
     try {
       const user = await client.signin({ username, password });
       setCurrentUser(user);
-      router.push("/Kambaz");
+      router.push("/Dashboard");
     } catch (err) {
       setError("Invalid username or password");
     }

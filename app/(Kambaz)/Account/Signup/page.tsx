@@ -29,7 +29,7 @@ export default function SignupPage() {
   try {
     const user = await client.signup(form);
     setCurrentUser(user);
-    router.push("/Kambaz");
+    router.push("/Dashboard");
   } catch (err) {
     alert("Signup failed — username may already be taken.");
   }

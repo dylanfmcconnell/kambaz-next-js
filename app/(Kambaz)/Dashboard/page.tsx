@@ -27,7 +27,7 @@ export default function DashboardWrapper() {
       <div>
         <h1>Dashboard</h1>
 
-        <Link href="/Kambaz" className="btn btn-secondary mb-3">Back</Link>
+        <Link href="/" className="btn btn-secondary mb-3">Back</Link>
 
         <div className="list-group mt-3">
           {courses.map(course => (
