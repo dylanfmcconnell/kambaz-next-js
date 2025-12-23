@@ -1,17 +1,28 @@
+"use client";
+import { usePathname, useParams } from "next/navigation";
 import Link from "next/link";
+import { ListGroup } from "react-bootstrap";
+
+const items = ["Home", "Modules", "Piazza", "Zoom", "Assignments", "Quizzes", "Grades", "People"];
+
 export default function CourseNavigation() {
+  const { cid } = useParams<{ cid: string }>();
+  const pathname = usePathname();
   return (
-    <div id="wd-courses-navigation">
-      <Link href="/Courses/1234/Home" id="wd-course-home-link">Home</Link><br/>
-      <Link href="/Courses/1234/Modules" id="wd-course-modules-link">Modules
-        </Link><br/>
-      <Link href="/Courses/1234/Piazza" id="wd-course-piazza-link">Piazza</Link><br/>
-      <Link href="/Courses/1234/Zoom" id="wd-course-zoom-link">Zoom</Link><br/>
-      <Link href="/Courses/1234/Assignments" id="wd-course-assignments-link">
-          Assignments</Link><br/>
-      <Link href="/Courses/1234/Quizzes" id="wd-course-quizzes-link">Quizzes
-        </Link><br/>
-      <Link href="/Courses/1234/Grades" id="wd-course-grades-link">Grades</Link><br/>
-      <Link href="/Courses/1234/People/Table" id="wd-course-people-link">People</Link><br/>
-    </div>
-  );}
+    <ListGroup className="rounded-0">
+      {items.map((label) => {
+        const href = `/Courses/${cid}/${label}`;
+        // Check if current path starts with this nav item's path (for nested routes)
+        const active = pathname === href || pathname.startsWith(`${href}/`);
+        return (
+          <ListGroup.Item key={label}
+                          as={Link}
+                          href={href}
+                          className={`border-0 ${active ? "text-danger bg-light" : ""}`}>
+            {label}
+          </ListGroup.Item>
+        );
+      })}
+    </ListGroup>
+  );
+}
